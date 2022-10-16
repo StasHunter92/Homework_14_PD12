@@ -1,0 +1,140 @@
+import sqlite3
+from json import dumps
+from sqlite3 import OperationalError
+
+
+def get_result_from_database(query: str):
+    """Main function to get the result from database"""
+    with sqlite3.connect("netflix.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(query)
+        result: list = cursor.fetchall()
+        return result
+
+
+def get_movie_by_title(title: str) -> dict | None:
+    """Get a movie by title from the database"""
+    query: str = f"""
+            SELECT `title`, `country`, `release_year`, `listed_in`, `description` FROM netflix
+            WHERE `title` LIKE '%{title}%'
+            ORDER BY `release_year` DESC
+            LIMIT 1
+            """
+    result: list = get_result_from_database(query)
+    try:
+        return {
+            "title": result[0][0],
+            "country": result[0][1],
+            "release_year": result[0][2],
+            "genre": result[0][3],
+            "description": result[0][4].rstrip()
+        }
+    except IndexError:
+        return None
+
+
+def get_movies_between_years(year_from: int, year_to: int) -> list | None:
+    """Get the list of 100 movies between two years"""
+    query: str = f"""
+            SELECT `title`, `release_year` FROM netflix
+            WHERE `release_year` BETWEEN {year_from} AND {year_to}
+            LIMIT 100
+            """
+    result: list = get_result_from_database(query)
+    list_of_films = []
+    for element in result:
+        film: dict = {
+            "title": element[0],
+            "release_year": element[1]
+        }
+        list_of_films.append(film)
+    if len(list_of_films) != 0:
+        return list_of_films
+    else:
+        return None
+
+
+def get_movies_by_rating(rating: str) -> list | None:
+    """Get the list of movies by rating"""
+    ratings_dict: dict = {
+        "children": '("G")',
+        "family": ("G", "PG", "PG-13"),
+        "adult": ("R", "NC-17")
+    }
+    query: str = f"""
+            SELECT `title`, `rating`, `description` FROM netflix
+            WHERE `rating` IN {ratings_dict.get(rating)}
+            """
+    try:
+        result: list = get_result_from_database(query)
+        list_of_films = []
+        for element in result:
+            film: dict = {
+                "title": element[0],
+                "rating": element[1],
+                "description": element[2].rstrip()
+            }
+            list_of_films.append(film)
+        return list_of_films
+    except OperationalError:
+        return None
+
+
+def get_ten_last_movies_by_genre(genre: str) -> list | None:
+    """Get list of 10 movies by genre sorted by release year DESC"""
+    query: str = f"""
+            SELECT `title`, `description` FROM netflix
+            WHERE `listed_in` LIKE '%{genre}%'
+            ORDER BY `release_year` DESC
+            LIMIT 10
+            """
+    result: list = get_result_from_database(query)
+    list_of_films = []
+    for element in result:
+        film: dict = {
+            "title": element[0],
+            "description": element[1].rstrip()
+        }
+        list_of_films.append(film)
+    if len(list_of_films) != 0:
+        return list_of_films
+    else:
+        return None
+
+
+def get_movies_by_criteria(type_: str, year: int, genre: str) -> str:
+    """Get a list of movies by criteria (type, year, genre)"""
+    query: str = f"""
+            SELECT `title`, `description`, `type`, `release_year`, `listed_in` FROM netflix
+            WHERE `type` = '{type_}' AND `release_year` = '{year}' AND `listed_in` LIKE '%{genre}%' 
+            """
+    result: list = get_result_from_database(query)
+    list_of_films = []
+    for element in result:
+        film: dict = {
+            "title": element[0],
+            "description": element[1].rstrip()
+        }
+        list_of_films.append(film)
+    return dumps(list_of_films, ensure_ascii=False)
+
+
+def get_actors_play_with(actor_1: str, actor_2: str) -> list:
+    """Returns a list of actors that have a play with the given actor"""
+    query: str = f"""
+            SELECT `cast` FROM netflix
+            WHERE `cast` LIKE '%{actor_1}%' AND `cast` LIKE '%{actor_2}%'
+            """
+    result: list = get_result_from_database(query)
+    actor_pair: list[str] = [actor_1, actor_2]
+    actor_list = []
+    for element in result:
+        for actor in element[0].split(', '):
+            if actor not in actor_pair:
+                actor_list.append(actor)
+    sorted_actor_list = []
+    for actor in actor_list:
+        if actor_list.count(actor) > 2:
+            if actor not in sorted_actor_list:
+                sorted_actor_list.append(actor)
+    return sorted_actor_list
