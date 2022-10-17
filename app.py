@@ -29,5 +29,11 @@ def ten_last_films_by_genre(genre: str):  # Return ten last films by genre
     return jsonify(result)
 
 
+@app.errorhandler(404)
+def error_404(error):
+    """Page 404 error"""
+    return f"OOPS! Page not found", 404
+
+
 if __name__ == '__main__':
     app.run()
