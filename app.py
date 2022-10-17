@@ -13,19 +13,19 @@ def movie_by_title(title: str):  # Return a movie by title
 
 @app.route('/movie/<int:year_from>/to/<int:year_to>')
 def movies_between_years(year_from: int, year_to: int):  # Return a list of movies between years
-    result: list | None = utils.get_movies_between_years(year_from, year_to)
+    result: list[dict] | None = utils.get_movies_between_years(year_from, year_to)
     return jsonify(result)
 
 
 @app.route('/rating/<rating>')
 def movies_by_rating(rating: str):  # Return a list of movies by rating
-    result: list | None = utils.get_movies_by_rating(rating)
+    result: list[dict] | None = utils.get_movies_by_rating(rating)
     return jsonify(result)
 
 
 @app.route('/genre/<genre>')
 def ten_last_films_by_genre(genre: str):  # Return ten last films by genre
-    result: list | None = utils.get_ten_last_movies_by_genre(genre)
+    result: list[dict] | None = utils.get_ten_last_movies_by_genre(genre)
     return jsonify(result)
 
 
